@@ -26,9 +26,10 @@ class Engine extends Thread{
 		InputStream XMLTextSource = null;
 		Document doc = null;
 		DocumentBuilder db;
+		Cfg configs;
 		
 		Engine (){
-		
+			viewAttr = false;
 			try{
 				DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
 				db = dbf.newDocumentBuilder(); 
@@ -104,6 +105,9 @@ class Engine extends Thread{
 		BufferedReader in;
 		PrintWriter out;
 		Map<String, ParserCommand> comms;
+		File xmlFile;
+		String [] cfgComms;
+		
 		public UI(){
 			in = new BufferedReader (new InputStreamReader(System.in) );
 			out = new PrintWriter(System.out);
@@ -124,28 +128,43 @@ class Engine extends Thread{
 				{
 					//System.out.println(ui.eng.doc.getDocumentElement().getTagName());
 					
-					treeParse(ui.eng.doc.getDocumentElement(),0);
+					treeParse(ui.eng.doc.getDocumentElement(),0, ui.eng.viewAttr);
 					 
 				}
-				public void treeParse(Node nd, int tab)
+				public void treeParse(Node nd, int tab, boolean va)
 				{
 					String space = "";
 					for(int i = 0; i<tab; i++)
-						space+=" ";
+						space+="  ";
 						
 					tab++;
 					
 					System.out.print( space + nd.getNodeName());
+					
+					if(va)
+					{
+						for(int i=0; i<nd.getAttributes().getLength(); i++)
+						{
+						System.out.print(" "+nd.getAttributes().item(i).getNodeName()+"= \""
+						+nd.getAttributes().item(i).getNodeValue()+"\"");
+						}
+					}
+					
 					System.out.println();
 					
 					for(int i=0; i<nd.getChildNodes().getLength(); i++)
 					{
-						treeParse(nd.getChildNodes().item(i), tab);
+						if(nd.getChildNodes().item(i).getNodeName()!="#text")
+							treeParse(nd.getChildNodes().item(i), tab,va);
 					}
 					
 									
 				}
+				
+				
 			}); 
+			
+			
 		}
 	
 	
@@ -153,6 +172,59 @@ class Engine extends Thread{
 		{
 			eng = link;
 		}
+		
+		public int parseCfg(String s)//0=only file 1 2 ... =file+comms -1=error
+		{
+			
+			//
+			
+			File tmpfile = new File (s);
+			if(tmpfile.isFile())
+			{	
+				xmlFile = tmpfile;
+				cfgComms = new String[0];
+				return 0;
+			}	
+			else
+			{
+				String[] m  = s.trim().split(".xml");
+				
+			//	System.out.println("m length "+m.length);
+
+				String tmpstr = "";
+				for(int i = 0; i<m.length-1;i++)
+				{
+					tmpstr+=m[i]+".xml";
+				}
+				//System.out.println("tmpstr "+tmpstr);
+				tmpfile = new File (tmpstr);
+				if(tmpfile.isFile())
+				{
+					xmlFile = tmpfile;
+					cfgComms = new String[1];
+					cfgComms[0] = m[m.length-1];					
+					return 1;
+				}
+				else
+				{
+					System.out.println("Incorrect file name");
+					return -1;
+
+				}
+				
+								
+			}
+			
+			/*
+			xmlFile = new File (m[0]);
+			if( m.length ==1)
+				return 0;
+			cfgComms = new String[1];	
+			cfgComms[0] = m[1];
+			return 1;
+			*/
+		}
+		
 		public void run()
 		{
 			if(eng==null)
@@ -165,9 +237,15 @@ class Engine extends Thread{
 			{
 				try{	
 					System.out.println("Enter file name");
-					String fName = in.readLine();
-					File file = new File(fName);
-					eng.XMLTextSource = new FileInputStream(file);
+					String s = in.readLine();
+					if(parseCfg(s)>0)
+					{	
+						
+						//eng.configs = new Cfg(S.split(" -"))
+					
+					}
+					
+					eng.XMLTextSource = new FileInputStream(xmlFile);
 					eng.interrupt();
 					//System.out.println(eng.getState().name().compareTo("TIMED_WAITING"));
 					while(eng.isInterrupted()){
@@ -203,8 +281,23 @@ class Engine extends Thread{
 		}
 	}
 	
+	class Cfg{
+		boolean viewAttr;
+		boolean textContent;
+		
+		Cfg(String[] s)
+		{
+			for(int i = 0; i<s.length; i++)
+			{
+				if(s[i]=="va")
+					viewAttr = true;
+				if(s[i]=="tc")
+					textContent = true;
+			}
+			
+		}
+	}
+	
 	interface ParserCommand{
 		public void execute(UI ui);	
 	}
-	
-	//http://svnbook.red-bean.com/nightly/ru/svn.tour.cycle.html
