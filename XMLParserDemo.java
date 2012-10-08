@@ -26,10 +26,10 @@ class Engine extends Thread{
 		InputStream XMLTextSource = null;
 		Document doc = null;
 		DocumentBuilder db;
-		Cfg configs;
+		Cfg configs = null;
 		
 		Engine (){
-			viewAttr = false;
+			
 			try{
 				DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
 				db = dbf.newDocumentBuilder(); 
@@ -37,6 +37,7 @@ class Engine extends Thread{
 			catch(ParserConfigurationException pce)
 			{
 				System.out.println("Engine ParserConfigurationException");
+				pce.printStackTrace();
 			}	
 		}
 		
@@ -128,7 +129,7 @@ class Engine extends Thread{
 				{
 					//System.out.println(ui.eng.doc.getDocumentElement().getTagName());
 					
-					treeParse(ui.eng.doc.getDocumentElement(),0, ui.eng.viewAttr);
+				//	treeParse(ui.eng.doc.getDocumentElement(),0, ui.eng.viewAttr);
 					 
 				}
 				public void treeParse(Node nd, int tab, boolean va)
@@ -281,9 +282,10 @@ class Engine extends Thread{
 		}
 	}
 	
-	class Cfg{
-		boolean viewAttr;
-		boolean textContent;
+	class Cfg
+	{
+		boolean viewAttr = false;
+		boolean textContent = false;
 		
 		Cfg(String[] s)
 		{
@@ -293,8 +295,7 @@ class Engine extends Thread{
 					viewAttr = true;
 				if(s[i]=="tc")
 					textContent = true;
-			}
-			
+			}			
 		}
 	}
 	
