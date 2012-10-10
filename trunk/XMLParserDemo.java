@@ -65,7 +65,7 @@ class Engine extends Thread{
 				}
 				catch (InterruptedException e)
 				{
-					System.out.println("Parser started");
+					System.out.println("Parser started. Enter commands. Possible commands: docName, docStruct.");
 					try{
 						if(XMLTextSource.available() < 1){
 							doc = db.newDocument();
@@ -129,10 +129,10 @@ class Engine extends Thread{
 				{
 					//System.out.println(ui.eng.doc.getDocumentElement().getTagName());
 					
-				//	treeParse(ui.eng.doc.getDocumentElement(),0, ui.eng.viewAttr);
+					treeParse(ui.eng.doc.getDocumentElement(),0);
 					 
 				}
-				public void treeParse(Node nd, int tab, boolean va)
+				public void treeParse(Node nd, int tab)
 				{
 					String space = "";
 					for(int i = 0; i<tab; i++)
@@ -142,8 +142,8 @@ class Engine extends Thread{
 					
 					System.out.print( space + nd.getNodeName());
 					
-					if(va)
-					{
+					if(eng.configs.viewAttributes==true)
+					{					
 						for(int i=0; i<nd.getAttributes().getLength(); i++)
 						{
 						System.out.print(" "+nd.getAttributes().item(i).getNodeName()+"= \""
@@ -155,8 +155,10 @@ class Engine extends Thread{
 					
 					for(int i=0; i<nd.getChildNodes().getLength(); i++)
 					{
+						if(nd.getChildNodes().item(i).getNodeName()=="#text"&eng.configs.textContent==true&&nd.getChildNodes().item(i).getNodeValue()!="")
+							System.out.println(space+"\""+nd.getChildNodes().item(i).getNodeValue()+"\"");  //?????
 						if(nd.getChildNodes().item(i).getNodeName()!="#text")
-							treeParse(nd.getChildNodes().item(i), tab,va);
+							treeParse(nd.getChildNodes().item(i), tab);
 					}
 					
 									
@@ -202,9 +204,20 @@ class Engine extends Thread{
 				if(tmpfile.isFile())
 				{
 					xmlFile = tmpfile;
-					cfgComms = new String[1];
-					cfgComms[0] = m[m.length-1];					
-					return 1;
+					
+					String[] arguments = (" " + s.substring(tmpstr.length()).trim()).split(" -");
+					
+					//System.arraycopy(arguments, 1, arguments,0, arguments. length -1);
+					System.out.println("ARGUMENTS: ");
+					System.out.println(" " + s.substring(tmpstr.length()).trim());
+					for(int i = 0; i<arguments.length;i++)
+					{
+						System.out.println(i +" "+arguments[i]);
+					}
+					eng.configs = new Cfg(arguments);
+					//cfgComms = new String[1];
+					//cfgComms[0] = m[m.length-1];					
+					return arguments.length;
 				}
 				else
 				{
@@ -237,7 +250,7 @@ class Engine extends Thread{
 			else
 			{
 				try{	
-					System.out.println("Enter file name");
+					System.out.println("Enter file name and arguments. Possible arguments: -va, -tc");
 					String s = in.readLine();
 					if(parseCfg(s)>0)
 					{	
@@ -284,18 +297,23 @@ class Engine extends Thread{
 	
 	class Cfg
 	{
-		boolean viewAttr = false;
+		 
+		boolean viewAttributes = false;
 		boolean textContent = false;
 		
-		Cfg(String[] s)
+		Cfg(String [] argArray)
 		{
-			for(int i = 0; i<s.length; i++)
+		//System.out.println("Cfg constructor");
+			for(int i = 0; i<argArray.length; i++)
 			{
-				if(s[i]=="va")
-					viewAttr = true;
-				if(s[i]=="tc")
+			System.out.println(argArray[i]);
+				if(argArray[i].compareTo("va")==0)
+					viewAttributes = true;
+				if(argArray[i].compareTo("tc")==0)
 					textContent = true;
-			}			
+			}
+		//System.out.println("Cfg viewAttributes = " + viewAttributes);		
+		//System.out.println("Cfg textContent = " + textContent);	
 		}
 	}
 	
