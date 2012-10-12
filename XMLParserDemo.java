@@ -142,7 +142,7 @@ class Engine extends Thread{
                                         
                                         System.out.print( space + nd.getNodeName());
                                         
-                                        if(eng.configs.viewAttributes==true)
+                                        if(eng.configs.isSet("va")==true)
                                         {                                       
                                                 for(int i=0; i<nd.getAttributes().getLength(); i++)
                                                 {
@@ -155,7 +155,7 @@ class Engine extends Thread{
                                         
                                         for(int i=0; i<nd.getChildNodes().getLength(); i++)
                                         {
-                                                if(nd.getChildNodes().item(i).getNodeName()=="#text"&&eng.configs.textContent==true&&nd.getChildNodes().item(i).getNodeValue().trim().length()!=0){
+                                                if(nd.getChildNodes().item(i).getNodeName()=="#text"&&eng.configs.isSet("tc")==true&&nd.getChildNodes().item(i).getNodeValue().trim().length()!=0){
 													System.out.println(space+"\""+nd.getChildNodes().item(i).getNodeValue()+"\"");
 													//System.out.println("before :'"+nd.getChildNodes().item(i).getNodeValue()+"' after :'"+nd.getChildNodes().item(i).getNodeValue().trim()+"'");
                                                 }  //?????
@@ -210,14 +210,20 @@ class Engine extends Thread{
                                         
                                         cfgComms = m[m.length-1].split(" -");
                                         
-                                        //System.arraycopy(arguments, 1, arguments,0, arguments. length -1);
+										List<String> list = Arrays.asList(cfgComms);
+										list = list.subList(1,list.size());
+										cfgComms = new String[0];
+										cfgComms = list.toArray(cfgComms);
+                                        Arrays.sort(cfgComms);
+										/*
+										//System.arraycopy(arguments, 1, arguments,0, arguments. length -1);
                                         System.out.println("ARGUMENTS: ");
                                        // System.out.println(" " + s.substring(tmpstr.length()).trim());
                                         for(int i = 0; i<cfgComms.length;i++)
                                         {
-                                                System.out.println(i +" "+cfgComms[i]);
+                                            System.out.println(i +" "+cfgComms[i]);
                                         }
-                                        
+                                        */
                                         //cfgComms = new String[1];
                                         //cfgComms[0] = m[m.length-1];                                  
                                         return cfgComms.length;
@@ -252,18 +258,21 @@ class Engine extends Thread{
                         }
                         else
                         {
-                                try{    
+                                try{
+										eng.configs = new Cfg();    
                                         System.out.println("Enter file name and arguments. Possible arguments: -va, -tc");
                                         System.out.println("Note: case sensitive!");
                                         String s = in.readLine();
-                                        while(parseCfg(s)<0)
+                                        
+										while(parseCfg(s)<0)
                                         {       
                                          System.out.println("File not found");    
                                          s = in.readLine();   
                                                 //eng.configs = new Cfg(S.split(" -"))
                                         
                                         }
-                                        eng.configs = new Cfg(cfgComms);
+                                        eng.configs.actualize(cfgComms);
+										
                                         eng.XMLTextSource = new FileInputStream(xmlFile);
                                         eng.interrupt();
                                         //System.out.println(eng.getState().name().compareTo("TIMED_WAITING"));
@@ -303,12 +312,12 @@ class Engine extends Thread{
         class Cfg
         {
             
-                private Map<String, String> commands;
+                private NavigableMap<String, String> commands;
                 Cfg()
                 {
-					commands = new HashMap<String, String>();
+					commands = new TreeMap<String, String>();
 					commands.put("va","viewAttributes");
-					commands.put("tc","TextContent");
+					commands.put("tc","textContent");
                 
                 }
 				void actualize(String[] argarray)
@@ -318,7 +327,18 @@ class Engine extends Thread{
 						commands.clear();
 						return;
 					}
-						
+					
+					for (int i = 0;i<argarray.length;i++)
+					{
+						while(argarray[i].compareTo(commands.floorKey(argarray[i]))!=0)
+							commands.remove(commands.floorKey(argarray[i]));
+					}
+					while(commands.higherKey(argarray[argarray.length-1])!=null)
+						commands.remove(commands.higherKey(argarray[argarray.length-1]));
+				}
+				public boolean isSet(String key)
+				{
+					return commands.containsKey(key);
 				}
 				
         }
