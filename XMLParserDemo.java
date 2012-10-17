@@ -260,7 +260,8 @@ class Engine extends Thread{
                         {
                                 try{
 										eng.configs = new Cfg();    
-                                        System.out.println("Enter file name and arguments. Possible arguments: -va, -tc");
+                                        System.out.println("Enter file name and arguments. Possible arguments: ");
+										System.out.print(eng.configs);
                                         System.out.println("Note: case sensitive!");
                                         String s = in.readLine();
                                         
@@ -339,6 +340,16 @@ class Engine extends Thread{
 				public boolean isSet(String key)
 				{
 					return commands.containsKey(key);
+				}
+				public String toString()
+				{
+					String s = "";
+					
+					for (Map.Entry<String, String> entry : commands.entrySet())
+					{
+						s+=entry.getKey() + " - " + entry.getValue() +"\n";
+					}
+					return s;
 				}
 				
         }
