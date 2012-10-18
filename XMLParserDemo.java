@@ -4,102 +4,105 @@ import java.io.*;
 import java.nio.*;
 import java.util.*;
 
-class XMLParserDemo{ //klass-obolochka
-        XMLParserDemo(){
-                Engine eng = new Engine();
-                UI ui = new UI();
-                eng.setUI(ui);
-                ui.setEngine(eng);
-                eng.start();
-                ui.start();     
-        }
+class XMLParserDemo
+{ //klass-obolochka
+    XMLParserDemo()
+	{
+        Engine eng = new Engine();
+        UI ui = new UI();
+        eng.setUI(ui);
+        ui.setEngine(eng);
+        eng.start();
+        ui.start();     
+    }
         
-        public static void main(String [] args){
-                XMLParserDemo p = new XMLParserDemo();
-        }
+    public static void main(String [] args)
+	{
+        XMLParserDemo p = new XMLParserDemo();
+    }
         
         
 }
-class Engine extends Thread{
-                UI ui = null;
-                //String XMLText=null;
-                InputStream XMLTextSource = null;
-                Document doc = null;
-                DocumentBuilder db;
-                Cfg configs = null;
+class Engine extends Thread
+{
+    UI ui = null;    
+    InputStream XMLTextSource = null;
+    Document doc = null;
+    DocumentBuilder db;
+    Cfg configs = null;
                 
-                Engine (){
-                        
-                        try{
-                                DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
-                                db = dbf.newDocumentBuilder(); 
-                        }
-                        catch(ParserConfigurationException pce)
-                        {
-                                System.out.println("Engine ParserConfigurationException");
-                                pce.printStackTrace();
-                        }       
-                }
+    Engine ()
+	{                        
+        try
+		{
+            DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
+            db = dbf.newDocumentBuilder(); 
+        }
+        catch(ParserConfigurationException pce)
+		{
+			System.out.println("Engine ParserConfigurationException");
+			pce.printStackTrace();
+        }       
+    }
                 
-                public void setUI(UI link)
+    public void setUI(UI link)
+    {
+		ui = link;
+    }
+    public void run()
+    {
+        if(ui==null)
+        {
+            System.out.println("NO UI");
+            System.exit(0);                                
+        }
+                        
+                        
+        while(true)
+        {
+            try
+			{
+                while(true)
                 {
-                        ui = link;
+                    sleep(216000000);
                 }
-                public void run()
-                {
-                        if(ui==null)
-                        {
-                                System.out.println("NO UI");
-                                System.exit(0);
-                                
-                        }
-                        
-                        
-                        while(true)
-                        {
-                                try{
-                                        while(true)
-                                        {
-                                                sleep(216000000);
-                                        }
-                                }
-                                catch (InterruptedException e)
-                                {
-                                        System.out.println("Parser started. Enter commands. Possible commands: docName, docStruct.");
-                                        try{
-                                                if(XMLTextSource.available() < 1){
-                                                        doc = db.newDocument();
-                                                } 
-                                                else
-                                                {
-                                                
-                                                        try
-                                                        {
-                                                                doc = db.parse(XMLTextSource);
-                                                                interrupted();
-                                                                //System.out.println("Parser finished");
-                                                                //System.out.println("doc="+doc);
-                                                        }       
-                                                        catch (IOException ioe)
-                                                        {
-                                                                System.out.println("Engine IOException");
-                                                        }       
-                                                        catch (org.xml.sax.SAXException se)
-                                                        {
-                                                                System.out.println("Engine SAXException");
-                                                        }       
-                                                }
-                                        }catch(IOException ioe)
-                                        {
-                                                ioe.printStackTrace();
-                                        }
-                                }
-                                
-                        }
-                        
-                        
-                }
-        } 
+            }
+            catch (InterruptedException e)
+            {
+                System.out.println("Parser started. Enter commands. Possible commands: docName, docStruct.");
+                try
+				{
+                    if(XMLTextSource.available() < 1)
+					{
+                        doc = db.newDocument();
+                    } 
+                    else
+                    {                                                
+						try
+						{
+							doc = db.parse(XMLTextSource);
+							interrupted();
+							//System.out.println("Parser finished");
+							//System.out.println("doc="+doc);
+						}       
+						catch (IOException ioe)
+						{
+							System.out.println("Engine IOException");
+						}       
+						catch (org.xml.sax.SAXException se)
+						{
+							System.out.println("Engine SAXException");
+						}       
+					}
+				}
+				catch(IOException ioe)
+				{
+					ioe.printStackTrace();
+				}
+			}                                
+		}                 
+	}
+} 
         
         class UI extends Thread{
                 Engine eng = null;
@@ -156,8 +159,8 @@ class Engine extends Thread{
                                         for(int i=0; i<nd.getChildNodes().getLength(); i++)
                                         {
                                                 if(nd.getChildNodes().item(i).getNodeName()=="#text"&&eng.configs.isSet("tc")==true&&nd.getChildNodes().item(i).getNodeValue().trim().length()!=0){
-													System.out.println(space+"\""+nd.getChildNodes().item(i).getNodeValue()+"\"");
-													//System.out.println("before :'"+nd.getChildNodes().item(i).getNodeValue()+"' after :'"+nd.getChildNodes().item(i).getNodeValue().trim()+"'");
+                                                                                                        System.out.println(space+"\""+nd.getChildNodes().item(i).getNodeValue()+"\"");
+                                                                                                        //System.out.println("before :'"+nd.getChildNodes().item(i).getNodeValue()+"' after :'"+nd.getChildNodes().item(i).getNodeValue().trim()+"'");
                                                 }  //?????
                                                  
                                                 if(nd.getChildNodes().item(i).getNodeName()!="#text")
@@ -210,13 +213,13 @@ class Engine extends Thread{
                                         
                                         cfgComms = m[m.length-1].split(" -");
                                         
-										List<String> list = Arrays.asList(cfgComms);
-										list = list.subList(1,list.size());
-										cfgComms = new String[0];
-										cfgComms = list.toArray(cfgComms);
+                                                                                List<String> list = Arrays.asList(cfgComms);
+                                                                                list = list.subList(1,list.size());
+                                                                                cfgComms = new String[0];
+                                                                                cfgComms = list.toArray(cfgComms);
                                         Arrays.sort(cfgComms);
-										/*
-										//System.arraycopy(arguments, 1, arguments,0, arguments. length -1);
+                                                                                /*
+                                                                                //System.arraycopy(arguments, 1, arguments,0, arguments. length -1);
                                         System.out.println("ARGUMENTS: ");
                                        // System.out.println(" " + s.substring(tmpstr.length()).trim());
                                         for(int i = 0; i<cfgComms.length;i++)
@@ -259,13 +262,13 @@ class Engine extends Thread{
                         else
                         {
                                 try{
-										eng.configs = new Cfg();    
+                                                                                eng.configs = new Cfg();    
                                         System.out.println("Enter file name and arguments. Possible arguments: ");
-										System.out.print(eng.configs);
+                                                                                System.out.print(eng.configs);
                                         System.out.println("Note: case sensitive!");
                                         String s = in.readLine();
                                         
-										while(parseCfg(s)<0)
+                                                                                while(parseCfg(s)<0)
                                         {       
                                          System.out.println("File not found");    
                                          s = in.readLine();   
@@ -273,7 +276,7 @@ class Engine extends Thread{
                                         
                                         }
                                         eng.configs.actualize(cfgComms);
-										
+                                                                                
                                         eng.XMLTextSource = new FileInputStream(xmlFile);
                                         eng.interrupt();
                                         //System.out.println(eng.getState().name().compareTo("TIMED_WAITING"));
@@ -313,45 +316,45 @@ class Engine extends Thread{
         class Cfg
         {
             
-                private NavigableMap<String, String> commands;
+        private NavigableMap<String, String> commands;
                 Cfg()
                 {
-					commands = new TreeMap<String, String>();
-					commands.put("va","viewAttributes");
-					commands.put("tc","textContent");
+                                        commands = new TreeMap<String, String>();
+                                        commands.put("va","viewAttributes");
+                                        commands.put("tc","textContent");
                 
                 }
-				void actualize(String[] argarray)
-				{
-					if (argarray.length==0)
-					{	
-						commands.clear();
-						return;
-					}
-					
-					for (int i = 0;i<argarray.length;i++)
-					{
-						while(argarray[i].compareTo(commands.floorKey(argarray[i]))!=0)
-							commands.remove(commands.floorKey(argarray[i]));
-					}
-					while(commands.higherKey(argarray[argarray.length-1])!=null)
-						commands.remove(commands.higherKey(argarray[argarray.length-1]));
-				}
-				public boolean isSet(String key)
-				{
-					return commands.containsKey(key);
-				}
-				public String toString()
-				{
-					String s = "";
-					
-					for (Map.Entry<String, String> entry : commands.entrySet())
-					{
-						s+=entry.getKey() + " - " + entry.getValue() +"\n";
-					}
-					return s;
-				}
-				
+                                void actualize(String[] argarray)
+                                {
+                                        if (argarray.length==0)
+                                        {       
+                                                commands.clear();
+                                                return;
+                                        }
+                                        
+                                        for (int i = 0;i<argarray.length;i++)
+                                        {
+                                                while(argarray[i].compareTo(commands.floorKey(argarray[i]))!=0)
+                                                        commands.remove(commands.floorKey(argarray[i]));
+                                        }
+                                        while(commands.higherKey(argarray[argarray.length-1])!=null)
+                                                commands.remove(commands.higherKey(argarray[argarray.length-1]));
+                                }
+                                public boolean isSet(String key)
+                                {
+                                        return commands.containsKey(key);
+                                }
+                                public String toString()
+                                {
+                                        String s = "";
+                                        
+                                        for (Map.Entry<String, String> entry : commands.entrySet())
+                                        {
+                                                s+=entry.getKey() + " - " + entry.getValue() +"\n";
+                                        }
+                                        return s;
+                                }
+                                
         }
         
         interface ParserCommand{
