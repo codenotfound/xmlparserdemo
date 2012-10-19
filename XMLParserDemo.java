@@ -69,7 +69,17 @@ class Engine extends Thread
             }
             catch (InterruptedException e)
             {
-                System.out.println("Parser started. Enter commands. Possible commands: docName, docStruct.");
+                System.out.print("Parser started. Enter commands.Possible commands: ");
+                
+                String s="";
+                for (Map.Entry<String, Command> entry : ui.comms.entrySet())
+                {
+					s+=entry.getKey()+", ";// + " - " + entry.getValue().desc +"\n";
+				}
+				s+="\n";
+                System.out.print(s);
+                System.out.println("Type \"help\" to get description of commands");
+                
                 try
 				{
                     if(XMLTextSource.available() < 1)
@@ -108,70 +118,89 @@ class Engine extends Thread
                 Engine eng = null;
                 BufferedReader in;
                 PrintWriter out;
-                Map<String, ParserCommand> comms;
+                Map<String, Command> comms;
                 File xmlFile;
                 String [] cfgComms;
                 
                 public UI(){
-                        in = new BufferedReader (new InputStreamReader(System.in) );
+                        in = new BufferedReader ( new InputStreamReader(System.in) );
                         out = new PrintWriter(System.out);
                         
-                        comms = new HashMap<String, ParserCommand>();
-                        comms.put("docName",new ParserCommand()
-                        {
+                        comms = new HashMap<String, Command>();
+                        ParserCommand pc = new ParserCommand(){
                                 public void execute(UI ui)
                                 {
                                         System.out.println(ui.eng.doc.getDocumentElement().getTagName());
                                          
                                 }
-                        }); 
+                        };
+                        comms.put("docName", new Command("docName",pc,"docName Description", this));
                         
-                        comms.put("docStruct",new ParserCommand()
+                        pc = new ParserCommand()
                         {
-                                public void execute(UI ui)
-                                {
-                                        //System.out.println(ui.eng.doc.getDocumentElement().getTagName());
+							public void execute(UI ui)
+								{
+									
+											 
+								}
+                        }
+                        comms.put("help", new Command("help",pc,"help Description", this));
+                        
+                        pc = new ParserCommand()
+                        {
+							public void execute(UI ui)
+							{
+								//System.out.println(ui.eng.doc.getDocumentElement().getTagName());
                                         
-                                        treeParse(ui.eng.doc.getDocumentElement(),0);
+								treeParse(ui.eng.doc.getDocumentElement(),0);
                                          
-                                }
-                                public void treeParse(Node nd, int tab)
-                                {
-                                        String space = "";
-                                        for(int i = 0; i<tab; i++)
-                                                space+="  ";
+							}
+							public void treeParse(Node nd, int tab)
+							{
+								String space = "";
+								for(int i = 0; i<tab; i++)
+									space+="  ";
                                                 
-                                        tab++;
+								tab++;
+											
+								System.out.print( space + nd.getNodeName());
+											
+								if(eng.configs.isSet("va")==true)
+								{                                       
+									for(int i=0; i<nd.getAttributes().getLength(); i++)
+									{
+										System.out.print(" "+nd.getAttributes().item(i).getNodeName()+"= \""
+										+nd.getAttributes().item(i).getNodeValue()+"\"");
+									}
+								}
                                         
-                                        System.out.print( space + nd.getNodeName());
+								System.out.println();
                                         
-                                        if(eng.configs.isSet("va")==true)
-                                        {                                       
-                                                for(int i=0; i<nd.getAttributes().getLength(); i++)
-                                                {
-                                                System.out.print(" "+nd.getAttributes().item(i).getNodeName()+"= \""
-                                                +nd.getAttributes().item(i).getNodeValue()+"\"");
-                                                }
-                                        }
-                                        
-                                        System.out.println();
-                                        
-                                        for(int i=0; i<nd.getChildNodes().getLength(); i++)
-                                        {
-                                                if(nd.getChildNodes().item(i).getNodeName()=="#text"&&eng.configs.isSet("tc")==true&&nd.getChildNodes().item(i).getNodeValue().trim().length()!=0){
-                                                                                                        System.out.println(space+"\""+nd.getChildNodes().item(i).getNodeValue()+"\"");
+								for(int i=0; i<nd.getChildNodes().getLength(); i++)
+								{
+									if(nd.getChildNodes().item(i).getNodeName()=="#text"&&eng.configs.isSet("tc")==true&&nd.getChildNodes().item(i).getNodeValue().trim().length()!=0){
+										System.out.println(space+"\""+nd.getChildNodes().item(i).getNodeValue()+"\"");
                                                                                                         //System.out.println("before :'"+nd.getChildNodes().item(i).getNodeValue()+"' after :'"+nd.getChildNodes().item(i).getNodeValue().trim()+"'");
-                                                }  //?????
+									}  //?????
                                                  
-                                                if(nd.getChildNodes().item(i).getNodeName()!="#text")
-                                                        treeParse(nd.getChildNodes().item(i), tab);
-                                        }
+									if(nd.getChildNodes().item(i).getNodeName()!="#text")
+										treeParse(nd.getChildNodes().item(i), tab);
+								}
                                         
                                                                         
                                 }
-                                
-                                
-                        }); 
+                        };
+                        comms.put("docStruct", new Command("docStruct",pc,"docStruct Description", this));
+                        
+                        pc = new ParserCommand()
+                        {
+							public void execute(UI ui)
+							{
+								System.exit(0);
+                                         
+							}
+						};
+						comms.put("exit", new Command("exit",pc,"exit Description", this));
                         
                         
                 }
@@ -262,8 +291,8 @@ class Engine extends Thread
                         else
                         {
                                 try{
-                                                                                eng.configs = new Cfg();    
-                                        System.out.println("Enter file name and arguments. Possible arguments: ");
+                                        eng.configs = new Cfg();    
+                                        System.out.print("Enter file name and arguments. Possible arguments: ");
                                                                                 System.out.print(eng.configs);
                                         System.out.println("Note: case sensitive!");
                                         String s = in.readLine();
@@ -291,7 +320,7 @@ class Engine extends Thread
                                                 comm = in.readLine();
                                                 if(comms.containsKey(comm))
                                                 {
-                                                        comms.get(comm).execute(this);
+                                                        comms.get(comm).execute();
                                                 }
                                                 else
                                                 {
@@ -350,13 +379,43 @@ class Engine extends Thread
                                         
                                         for (Map.Entry<String, String> entry : commands.entrySet())
                                         {
-                                                s+=entry.getKey() + " - " + entry.getValue() +"\n";
+                                                s+=entry.getKey()+", "; //+ " - " + entry.getValue() +"\n";
                                         }
-                                        return s;
+                                        return s+"\n";
                                 }
                                 
         }
-        
-        interface ParserCommand{
-                public void execute(UI ui);     
-        }
+class Command 
+{
+	String name;
+	ParserCommand CommandCode;
+    String desc;
+    UI ui;
+    
+    Command(String nm, ParserCommand cc, UI uint)
+    {
+		name = nm;
+		CommandCode =cc;
+		desc = "";
+		ui = uint;
+    }
+    Command(String nm, ParserCommand cc, String d, UI uint)
+    {
+		name = nm;
+		CommandCode =cc;
+		desc = d;
+		ui = uint;
+    }
+    public void execute()
+    {
+		CommandCode.execute(ui);
+    }     
+}
+class Stage
+{
+	//FilterInput
+}
+interface ParserCommand
+{
+	public void execute(UI ui);     
+}
