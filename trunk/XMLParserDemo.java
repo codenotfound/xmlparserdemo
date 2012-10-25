@@ -126,7 +126,7 @@ class Engine extends Thread
                         in = new BufferedReader ( new InputStreamReader(System.in) );
                         out = new PrintWriter(System.out);
                         
-                        comms = new HashMap<String, Command>();
+                        comms = new CommandMap<String, Command>();
                         ParserCommand pc = new ParserCommand(){
                                 public void execute(UI ui)
                                 {
@@ -143,7 +143,7 @@ class Engine extends Thread
 									
 											 
 								}
-                        }
+                        };
                         comms.put("help", new Command("help",pc,"help Description", this));
                         
                         pc = new ParserCommand()
@@ -213,10 +213,7 @@ class Engine extends Thread
                 
                 public int parseCfg(String s)//0=only file 1 2 ... =file+comms -1=error
                 {
-                        
-                        //
-                        
-                        File tmpfile = new File (s);
+                File tmpfile = new File (s);
                         if(tmpfile.isFile())
                         {       
                                 xmlFile = tmpfile;
@@ -293,11 +290,10 @@ class Engine extends Thread
                                 try{
                                         eng.configs = new Cfg();    
                                         System.out.print("Enter file name and arguments. Possible arguments: ");
-                                                                                System.out.print(eng.configs);
+                                        System.out.print(eng.configs);
                                         System.out.println("Note: case sensitive!");
                                         String s = in.readLine();
-                                        
-                                                                                while(parseCfg(s)<0)
+                                        while(parseCfg(s)<0)
                                         {       
                                          System.out.println("File not found");    
                                          s = in.readLine();   
@@ -313,21 +309,11 @@ class Engine extends Thread
                                                 Thread.sleep(1000);
                                         }
                                         
-                                        String comm = "";
+                                        
                                         
                                         while(true)
                                         {
-                                                comm = in.readLine();
-                                                if(comms.containsKey(comm))
-                                                {
-                                                        comms.get(comm).execute();
-                                                }
-                                                else
-                                                {
-                                                        System.out.println("Command not found");
-                                                }
-                                                
-                                                
+                                                getCommand(comms).execute(this);
                                         }
                                         //System.out.println(eng.doc);
                                         //System.exit(0);
@@ -340,6 +326,31 @@ class Engine extends Thread
                                                         
                         }
                 }
+				
+			public ParserCommand getCommand(FilterInput m)
+			{
+				String s="";
+				while(true)
+				{
+					try
+					{
+						s = in.readLine();
+					}
+					catch(IOException ioe)
+					{
+						ioe.printStackTrace();
+					}
+					if(m.isOk(s))
+					{
+						break;
+					}
+					else
+					{
+					System.out.println("Command not found, type \"help\" to get list of possible commands");
+					}
+				}
+				return m.getCommand(s).commandCode;
+			}
         }
         
         class Cfg
@@ -348,9 +359,9 @@ class Engine extends Thread
         private NavigableMap<String, String> commands;
                 Cfg()
                 {
-                                        commands = new TreeMap<String, String>();
-                                        commands.put("va","viewAttributes");
-                                        commands.put("tc","textContent");
+                    commands = new TreeMap<String, String>();
+                    commands.put("va","viewAttributes");
+                    commands.put("tc","textContent");
                 
                 }
                                 void actualize(String[] argarray)
@@ -388,34 +399,53 @@ class Engine extends Thread
 class Command 
 {
 	String name;
-	ParserCommand CommandCode;
+	ParserCommand commandCode;
     String desc;
     UI ui;
     
     Command(String nm, ParserCommand cc, UI uint)
     {
 		name = nm;
-		CommandCode =cc;
+		commandCode =cc;
 		desc = "";
 		ui = uint;
     }
     Command(String nm, ParserCommand cc, String d, UI uint)
     {
 		name = nm;
-		CommandCode =cc;
+		commandCode =cc;
 		desc = d;
 		ui = uint;
     }
     public void execute()
     {
-		CommandCode.execute(ui);
+		commandCode.execute(ui);
     }     
 }
-class Stage
+class CommandMap<String, Command> extends HashMap<String, Command> implements FilterInput
 {
-	//FilterInput
+	public boolean isOk(java.lang.String s)
+	{
+		return this.containsKey(s);
+	}
+	public java.lang.String getHelp()
+	{
+		return "Help";
+	}
+	public Command getCommand(java.lang.String s)
+	{
+		//Command tmp = ((Command) this.get(s));
+		return this.get(s);
+	}
 }
 interface ParserCommand
 {
 	public void execute(UI ui);     
+}
+interface FilterInput
+{
+	public boolean isOk(String s);
+	public String getHelp();
+	public Command getCommand(String s);
+	
 }
