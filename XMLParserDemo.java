@@ -1,3 +1,4 @@
+package XMLParser;
 import org.w3c.dom.*;
 import javax.xml.parsers.*;
 import java.io.*;
@@ -92,8 +93,6 @@ class Engine extends Thread
 						{
 							doc = db.parse(XMLTextSource);
 							interrupted();
-							//System.out.println("Parser finished");
-							//System.out.println("doc="+doc);
 						}       
 						catch (IOException ioe)
 						{
@@ -118,7 +117,9 @@ class Engine extends Thread
                 Engine eng = null;
                 BufferedReader in;
                 PrintWriter out;
-                Map<String, Command> comms;
+                CommandMap<String, Command> comms;
+                CommandMap<String,Command> sysComms;
+                FilterInput currentComms; 
                 File xmlFile;
                 String [] cfgComms;
                 
@@ -127,6 +128,7 @@ class Engine extends Thread
                         out = new PrintWriter(System.out);
                         
                         comms = new CommandMap<String, Command>();
+                        sysComms = new CommandMap<String, Command>();
                         ParserCommand pc = new ParserCommand(){
                                 public void execute(UI ui)
                                 {
@@ -150,10 +152,7 @@ class Engine extends Thread
                         {
 							public void execute(UI ui)
 							{
-								//System.out.println(ui.eng.doc.getDocumentElement().getTagName());
-                                        
 								treeParse(ui.eng.doc.getDocumentElement(),0);
-                                         
 							}
 							public void treeParse(Node nd, int tab)
 							{
@@ -211,71 +210,6 @@ class Engine extends Thread
                         eng = link;
                 }
                 
-                public int parseCfg(String s)//0=only file 1 2 ... =file+comms -1=error
-                {
-                File tmpfile = new File (s);
-                        if(tmpfile.isFile())
-                        {       
-                                xmlFile = tmpfile;
-                                cfgComms = new String[0];
-                                return 0;
-                        }       
-                        else
-                        {
-                                String[] m  = s.trim().split(".xml");
-                                
-                        //      System.out.println("m length "+m.length);
-
-                                String tmpstr = "";
-                                for(int i = 0; i<m.length-1;i++)
-                                {
-                                        tmpstr+=m[i]+".xml";
-                                }
-                                //System.out.println("tmpstr "+tmpstr);
-                                tmpfile = new File (tmpstr);
-                                if(tmpfile.isFile())
-                                {
-                                        xmlFile = tmpfile;
-                                        
-                                        cfgComms = m[m.length-1].split(" -");
-                                        
-                                                                                List<String> list = Arrays.asList(cfgComms);
-                                                                                list = list.subList(1,list.size());
-                                                                                cfgComms = new String[0];
-                                                                                cfgComms = list.toArray(cfgComms);
-                                        Arrays.sort(cfgComms);
-                                                                                /*
-                                                                                //System.arraycopy(arguments, 1, arguments,0, arguments. length -1);
-                                        System.out.println("ARGUMENTS: ");
-                                       // System.out.println(" " + s.substring(tmpstr.length()).trim());
-                                        for(int i = 0; i<cfgComms.length;i++)
-                                        {
-                                            System.out.println(i +" "+cfgComms[i]);
-                                        }
-                                        */
-                                        //cfgComms = new String[1];
-                                        //cfgComms[0] = m[m.length-1];                                  
-                                        return cfgComms.length;
-                                }
-                                else
-                                {
-                                        System.out.println("Incorrect file name");
-                                        return -1;
-
-                                }
-                                
-                                                                
-                        }
-                        
-                        /*
-                        xmlFile = new File (m[0]);
-                        if( m.length ==1)
-                                return 0;
-                        cfgComms = new String[1];       
-                        cfgComms[0] = m[1];
-                        return 1;
-                        */
-                }
                 
                 public void run()
                 {
@@ -288,35 +222,26 @@ class Engine extends Thread
                         else
                         {
                                 try{
-                                        eng.configs = new Cfg();    
+                                        eng.configs = new Cfg(this);    
                                         System.out.print("Enter file name and arguments. Possible arguments: ");
                                         System.out.print(eng.configs);
                                         System.out.println("Note: case sensitive!");
                                         String s = in.readLine();
+                                        /*
                                         while(parseCfg(s)<0)
                                         {       
                                          System.out.println("File not found");    
                                          s = in.readLine();   
                                                 //eng.configs = new Cfg(S.split(" -"))
                                         
-                                        }
-                                        eng.configs.actualize(cfgComms);
-                                                                                
-                                        eng.XMLTextSource = new FileInputStream(xmlFile);
-                                        eng.interrupt();
-                                        //System.out.println(eng.getState().name().compareTo("TIMED_WAITING"));
-                                        while(eng.isInterrupted()){
-                                                Thread.sleep(1000);
-                                        }
-                                        
-                                        
+                                        }*/
+                                        currentComms = eng.configs;
                                         
                                         while(true)
                                         {
-                                                getCommand(comms).execute(this);
+                                            getCommand(comms).execute(this);
                                         }
-                                        //System.out.println(eng.doc);
-                                        //System.exit(0);
+
                                 }
                                 catch(Exception e)
                                 {
@@ -349,51 +274,126 @@ class Engine extends Thread
 					System.out.println("Command not found, type \"help\" to get list of possible commands");
 					}
 				}
-				return m.getCommand(s).commandCode;
+				return m.getCommand(s);
 			}
+			
         }
         
-        class Cfg
+class Cfg implements FilterInput
+{
+	private NavigableMap<String, String> commands;
+	UI ui;
+	
+	Cfg(UI u)
+    {
+		commands = new TreeMap<String, String>();
+        commands.put("va","viewAttributes");
+        commands.put("tc","textContent");
+        ui=u;
+    }
+    void actualize(String[] argarray)
+    {
+		if (argarray.length==0)
+        {       
+			commands.clear();
+            return;
+        }
+        for (int i = 0;i<argarray.length;i++)
         {
-            
-        private NavigableMap<String, String> commands;
-                Cfg()
-                {
-                    commands = new TreeMap<String, String>();
-                    commands.put("va","viewAttributes");
-                    commands.put("tc","textContent");
-                
+			while(argarray[i].compareTo(commands.floorKey(argarray[i]))!=0)
+				commands.remove(commands.floorKey(argarray[i]));
+        }
+        while(commands.higherKey(argarray[argarray.length-1])!=null)
+			commands.remove(commands.higherKey(argarray[argarray.length-1]));
+    }
+    public boolean isSet(String key)
+    {
+		return commands.containsKey(key);
+    }
+    public String toString()
+    {
+		String s = "";
+		for (Map.Entry<String, String> entry : commands.entrySet())
+		{
+			s+=entry.getKey()+", "; //+ " - " + entry.getValue() +"\n";
+		}
+		return s+"\n";
+    }
+    
+    public boolean isOk(String s)
+    {
+		File tmpfile = new File (s);
+        if(tmpfile.isFile())
+        {       
+			ui.xmlFile = tmpfile;
+            ui.cfgComms = new String[0];
+            return true;
+        }       
+        else
+        {
+			String[] m  = s.trim().split(".xml");
+                                String tmpstr = "";
+                                for(int i = 0; i<m.length-1;i++)
+                                {
+                                        tmpstr+=m[i]+".xml";
+                                }
+                                tmpfile = new File (tmpstr);
+                                if(tmpfile.isFile())
+                                {
+                                        ui.xmlFile = tmpfile;
+                                        
+                                        ui.cfgComms = m[m.length-1].split(" -");
+                                        
+                                                                                List<String> list = Arrays.asList(ui.cfgComms);
+                                                                                list = list.subList(1,list.size());
+                                                                                ui.cfgComms = new String[0];
+                                                                                ui.cfgComms = list.toArray(ui.cfgComms);
+                                        Arrays.sort(ui.cfgComms);
+                              
+                                        return true;
+                                }
+                                else
+                                {
+                                        System.out.println("Incorrect file name");
+                                        return false;
+
+                                }
+                                
+                                                                
+                        }
+
+              
+    }
+	public String getHelp()
+	{
+		return "cfg help";
+	}
+	public ParserCommand getCommand(java.lang.String s)
+	{
+		return new ParserCommand(){
+			public void execute(UI ui){
+				ui.eng.configs.actualize(ui.cfgComms);
+				try{
+					ui.eng.XMLTextSource = new FileInputStream(ui.xmlFile);
+                }catch(IOException e){
+					e.printStackTrace();
+					System.exit(0);
                 }
-                                void actualize(String[] argarray)
-                                {
-                                        if (argarray.length==0)
-                                        {       
-                                                commands.clear();
-                                                return;
-                                        }
-                                        
-                                        for (int i = 0;i<argarray.length;i++)
-                                        {
-                                                while(argarray[i].compareTo(commands.floorKey(argarray[i]))!=0)
-                                                        commands.remove(commands.floorKey(argarray[i]));
-                                        }
-                                        while(commands.higherKey(argarray[argarray.length-1])!=null)
-                                                commands.remove(commands.higherKey(argarray[argarray.length-1]));
-                                }
-                                public boolean isSet(String key)
-                                {
-                                        return commands.containsKey(key);
-                                }
-                                public String toString()
-                                {
-                                        String s = "";
-                                        
-                                        for (Map.Entry<String, String> entry : commands.entrySet())
-                                        {
-                                                s+=entry.getKey()+", "; //+ " - " + entry.getValue() +"\n";
-                                        }
-                                        return s+"\n";
-                                }
+                ui.eng.interrupt();
+                ui.currentComms = ui.comms;
+                while(ui.eng.isInterrupted())
+				{
+					try{
+						Thread.sleep(1000);
+					}catch(InterruptedException ie){
+						ie.printStackTrace();
+					}
+                }
+                System.out.print("Enter command :");				
+			}
+		};
+	}
+                                
                                 
         }
 class Command 
@@ -432,20 +432,21 @@ class CommandMap<String, Command> extends HashMap<String, Command> implements Fi
 	{
 		return "Help";
 	}
-	public Command getCommand(java.lang.String s)
+	public XMLParser.ParserCommand getCommand(java.lang.String s)
 	{
-		//Command tmp = ((Command) this.get(s));
-		return this.get(s);
+		XMLParser.Command tmp = (XMLParser.Command) this.get(s);
+		return (XMLParser.ParserCommand) tmp.commandCode;
 	}
 }
 interface ParserCommand
 {
 	public void execute(UI ui);     
 }
+
 interface FilterInput
 {
 	public boolean isOk(String s);
 	public String getHelp();
-	public Command getCommand(String s);
+	public ParserCommand getCommand(String s);
 	
 }
