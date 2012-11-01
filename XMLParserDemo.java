@@ -130,78 +130,82 @@ class UI extends Thread{
 
         comms = new CommandMap<String, Command>();
         sysComms = new CommandMap<String, Command>();
-        ParserCommand pc = new ParserCommand(){
-            public void execute(UI ui)
-            {
-                System.out.println(ui.eng.doc.getDocumentElement().getTagName());
 
-            }
-        };
-        comms.put("docName", new Command("docName",pc,"docName Description", this));
+        //Common commands
 
-        pc = new ParserCommand()
-        {
-            public void execute(UI ui)
-            {
-
-
-            }
-        };
-        comms.put("help", new Command("help",pc,"help Description", this));
-
-        pc = new ParserCommand()
-        {
-            public void execute(UI ui)
-            {
-                treeParse(ui.eng.doc.getDocumentElement(),0);
-            }
-            public void treeParse(Node nd, int tab)
-            {
-                String space = "";
-                for(int i = 0; i<tab; i++)
-                    space+="  ";
-
-                tab++;
-
-                System.out.print( space + nd.getNodeName());
-
-                if(eng.configs.isSet("va"))
+        comms.put("docName", new Command("docName", new ParserCommand(){
+                public void execute(UI ui)
                 {
-                    for(int i=0; i<nd.getAttributes().getLength(); i++)
+                    System.out.println(ui.eng.doc.getDocumentElement().getTagName());
+
+                }
+            },"docName Description", this)
+        );
+
+        comms.put("docStruct", new Command("docStruct",new ParserCommand()
+            {
+                public void execute(UI ui)
+                {
+                    treeParse(ui.eng.doc.getDocumentElement(),0);
+                }
+                public void treeParse(Node nd, int tab)
+                {
+                    String space = "";
+                    for(int i = 0; i<tab; i++)
+                        space+="  ";
+
+                    tab++;
+
+                    System.out.print( space + nd.getNodeName());
+
+                    if(eng.configs.isSet("va"))
                     {
-                        System.out.print(" "+nd.getAttributes().item(i).getNodeName()+"= \""
-                                +nd.getAttributes().item(i).getNodeValue()+"\"");
+                        for(int i=0; i<nd.getAttributes().getLength(); i++)
+                        {
+                            System.out.print(" "+nd.getAttributes().item(i).getNodeName()+"= \""
+                                    +nd.getAttributes().item(i).getNodeValue()+"\"");
+                        }
                     }
+
+                    System.out.println();
+
+                    for(int i=0; i<nd.getChildNodes().getLength(); i++)
+                    {
+                        if(nd.getChildNodes().item(i).getNodeName().compareTo("#text")==0 && eng.configs.isSet("tc") &&nd.getChildNodes().item(i).getNodeValue().trim().length()!=0){
+                            System.out.println(space+"\""+nd.getChildNodes().item(i).getNodeValue()+"\"");
+                            //System.out.println("before :'"+nd.getChildNodes().item(i).getNodeValue()+"' after :'"+nd.getChildNodes().item(i).getNodeValue().trim()+"'");
+                        }  //?????
+
+                        if(nd.getChildNodes().item(i).getNodeName()!="#text")
+                            treeParse(nd.getChildNodes().item(i), tab);
+                    }
+
+
                 }
+            },"docStruct Description", this)
+        );
 
-                System.out.println();
+        //System commands
 
-                for(int i=0; i<nd.getChildNodes().getLength(); i++)
-                {
-                    if(nd.getChildNodes().item(i).getNodeName()=="#text"&& eng.configs.isSet("tc") &&nd.getChildNodes().item(i).getNodeValue().trim().length()!=0){
-                        System.out.println(space+"\""+nd.getChildNodes().item(i).getNodeValue()+"\"");
-                        //System.out.println("before :'"+nd.getChildNodes().item(i).getNodeValue()+"' after :'"+nd.getChildNodes().item(i).getNodeValue().trim()+"'");
-                    }  //?????
-
-                    if(nd.getChildNodes().item(i).getNodeName()!="#text")
-                        treeParse(nd.getChildNodes().item(i), tab);
-                }
-
-
-            }
-        };
-        comms.put("docStruct", new Command("docStruct",pc,"docStruct Description", this));
-
-        pc = new ParserCommand()
-        {
-            public void execute(UI ui)
+        sysComms.put("help", new Command("help",new ParserCommand()
             {
-                System.exit(0);
+                public void execute(UI ui)
+                {
 
-            }
-        };
-        comms.put("exit", new Command("exit",pc,"exit Description", this));
 
+                }
+            },"help Description", this)
+        );
+
+        sysComms.put("exit", new Command("exit", new ParserCommand()
+            {
+                public void execute(UI ui)
+                {
+                    System.exit(0);
+
+                }
+            },"exit Description", this)
+        );
 
     }
 
@@ -227,8 +231,9 @@ class UI extends Thread{
                 System.out.print("Enter file name and arguments. Possible arguments: ");
                 System.out.print(eng.configs);
                 System.out.println("Note: case sensitive!");
-                String s = in.readLine();
                 /*
+                String s = in.readLine();
+
                 while(parseCfg(s)<0)
                 {
                  System.out.println("File not found");
@@ -240,7 +245,7 @@ class UI extends Thread{
 
                 while(true)
                 {
-                    getCommand(comms).execute(this);
+                    getCommand(currentComms).execute(this);
                 }
 
             }
@@ -268,14 +273,17 @@ class UI extends Thread{
             }
             if(m.isOk(s))
             {
-                break;
+                return m.getCommand(s);
+            }
+            if(sysComms.isOk(s)){
+                return sysComms.getCommand(s);
             }
             else
             {
                 System.out.println("Command not found, type \"help\" to get list of possible commands");
             }
         }
-        return m.getCommand(s);
+        //return m.getCommand(s);
     }
 
 }
