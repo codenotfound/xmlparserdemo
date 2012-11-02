@@ -118,8 +118,8 @@ class UI extends Thread{
     Engine eng = null;
     BufferedReader in;
     PrintWriter out;
-    CommandMap<String, Command> comms;
-    CommandMap<String,Command> sysComms;
+    CommandMap comms;
+    CommandMap sysComms;
     FilterInput currentComms;
     File xmlFile;
     String [] cfgComms;
@@ -128,8 +128,8 @@ class UI extends Thread{
         in = new BufferedReader ( new InputStreamReader(System.in) );
         out = new PrintWriter(System.out);
 
-        comms = new CommandMap<String, Command>();
-        sysComms = new CommandMap<String, Command>();
+        comms = new CommandMap();
+        sysComms = new CommandMap();
 
         //Common commands
 
@@ -191,8 +191,8 @@ class UI extends Thread{
             {
                 public void execute(UI ui)
                 {
-
-
+                    System.out.println(ui.currentComms.getHelp());
+                    System.out.println(ui.sysComms.getHelp());
                 }
             },"help Description", this)
         );
@@ -205,6 +205,20 @@ class UI extends Thread{
 
                 }
             },"exit Description", this)
+        );
+
+        sysComms.put("close", new Command("close", new ParserCommand()
+        {
+            public void execute(UI ui)
+            {
+                ui.eng.doc = null;
+                ui.eng.XMLTextSource=null;
+                ui.eng.configs = new Cfg(ui);
+                ui.xmlFile=null;
+                ui.currentComms =ui.eng.configs;
+                System.out.println("File closed. Enter file name:");
+            }
+        },"close Description", this)
         );
 
     }
@@ -362,7 +376,7 @@ class Cfg implements FilterInput
             }
             else
             {
-                System.out.println("Incorrect file name");
+                //System.out.println("Incorrect file name");
                 return false;
 
             }
@@ -374,7 +388,14 @@ class Cfg implements FilterInput
     }
     public String getHelp()
     {
-        return "cfg help";
+        Set<Map.Entry<String, String>> set = commands.entrySet();
+        java.lang.String s = "";
+        for (Map.Entry<String, String> entry : set)
+        {
+
+            s+=entry.getKey()+" - "+ entry.getValue()+"\n";
+        }
+        return s;
     }
     public ParserCommand getCommand(java.lang.String s)
     {
@@ -430,7 +451,7 @@ class Command
         commandCode.execute(ui);
     }
 }
-class CommandMap<String, Command> extends HashMap<String, Command> implements FilterInput
+class CommandMap extends HashMap<String, Command> implements FilterInput
 {
     public boolean isOk(java.lang.String s)
     {
@@ -438,7 +459,14 @@ class CommandMap<String, Command> extends HashMap<String, Command> implements Fi
     }
     public java.lang.String getHelp()
     {
-        return "Help";
+        Set<Map.Entry<String, XMLParser.Command>> set = this.entrySet();
+        java.lang.String s = "";
+        for (Map.Entry<String, XMLParser.Command> entry : set)
+        {
+
+            s+=entry.getKey()+" - "+ entry.getValue().desc+"\n";
+        }
+        return s;
     }
     public XMLParser.ParserCommand getCommand(java.lang.String s)
     {
