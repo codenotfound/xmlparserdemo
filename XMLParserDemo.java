@@ -32,6 +32,7 @@ class Engine extends Thread
     Document doc = null;
     DocumentBuilder db;
     Cfg configs = null;
+    Element currentElement;
 
     Engine ()
     {
@@ -93,6 +94,7 @@ class Engine extends Thread
                         try
                         {
                             doc = db.parse(XMLTextSource);
+                            currentElement = doc.getDocumentElement();
                             interrupted();
                         }
                         catch (IOException ioe)
@@ -140,6 +142,77 @@ class UI extends Thread{
 
                 }
             },"docName Description", this)
+        );
+
+        comms.put("select", new Command("select", new ParserCommand(){
+                    public void execute(UI u)
+                    {
+                        final UI ui = u;
+                //ui.eng.doc.getDocumentElement();
+                    u.currentComms = new FilterInput() {
+                    @Override
+                    public boolean isOk(String s) {
+                        return ui.eng.doc.getElementsByTagName(s).getLength() > 0;
+                    }
+
+                    @Override
+                    public String getHelp() {
+                        return "Enter tag name";  //To change body of implemented methods use File | Settings | File Templates.
+                    }
+
+                    @Override
+                    public ParserCommand getCommand(String s) {
+                        final String tagName = s;
+                        return new ParserCommand() {
+                            @Override
+                            public void execute(UI ui) {
+                                final NodeList nl = ui.eng.doc.getElementsByTagName(tagName);
+                                if(nl.getLength()==1){
+                                    ui.eng.currentElement = (Element) nl.item(0);
+                                    return;
+                                }
+                                String toOut="";
+                                for(int i = 0; i<nl.getLength(); i++)
+                                {
+                                    toOut +=i+") "+nl.item(i).getNodeName()+"\n";
+                                }
+                                System.out.println(toOut);
+                                ui.currentComms = new FilterInput() {
+                                    @Override
+                                    public boolean isOk(String s) {
+                                        int n = -1;
+                                        try{
+                                            n = Integer.parseInt(s);
+                                        }catch(NumberFormatException nfe){
+                                            return false;
+                                        }
+                                        return n>-1 && n<nl.getLength();  //To change body of implemented methods use File | Settings | File Templates.
+                                    }
+
+                                    @Override
+                                    public String getHelp() {
+                                        return "Enter number";  //To change body of implemented methods use File | Settings | File Templates.
+                                    }
+
+                                    @Override
+                                    public ParserCommand getCommand(String s) {
+                                        final int num = Integer.parseInt(s);
+                                        return new ParserCommand() {
+                                            @Override
+                                            public void execute(UI ui) {
+                                                ui.eng.currentElement = (Element) nl.item(num);
+                                                ui.currentComms = ui.comms;
+                                            }
+                                        };  //To change body of implemented methods use File | Settings | File Templates.
+                                    }
+                                };
+
+                            }
+                        };  //To change body of implemented methods use File | Settings | File Templates.
+                    }
+                };
+            }
+        },"select Description", this)
         );
 
         comms.put("docStruct", new Command("docStruct",new ParserCommand()
