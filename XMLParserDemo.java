@@ -72,8 +72,8 @@ class Engine extends Thread
             }
             catch (InterruptedException e)
             {
-                System.out.print("Parser started. Enter commands.Possible commands: ");
-
+                //System.out.print("Parser started. Enter commands.Possible commands: ");
+                /*
                 String s="";
                 for (Map.Entry<String, Command> entry : ui.comms.entrySet())
                 {
@@ -82,35 +82,37 @@ class Engine extends Thread
                 s+="\n";
                 System.out.print(s);
                 System.out.println("Type \"help\" to get description of commands");
+                 */
 
-                try
-                {
-                    if(XMLTextSource.available() < 1)
+                    try
                     {
-                        doc = db.newDocument();
+                        if(XMLTextSource.available() < 1)
+                        {
+                            doc = db.newDocument();
+                        }
+                        else
+                        {
+                            try
+                            {
+                                doc = db.parse(XMLTextSource);
+                                currentElement = doc.getDocumentElement();
+                                interrupted();
+                            }
+                            catch (IOException ioe)
+                            {
+                                System.out.println("Engine IOException");
+                            }
+                            catch (org.xml.sax.SAXException se)
+                            {
+                                System.out.println("Engine SAXException");
+                            }
+                        }
                     }
-                    else
+                    catch(IOException ioe)
                     {
-                        try
-                        {
-                            doc = db.parse(XMLTextSource);
-                            currentElement = doc.getDocumentElement();
-                            interrupted();
-                        }
-                        catch (IOException ioe)
-                        {
-                            System.out.println("Engine IOException");
-                        }
-                        catch (org.xml.sax.SAXException se)
-                        {
-                            System.out.println("Engine SAXException");
-                        }
+                        ioe.printStackTrace();
                     }
-                }
-                catch(IOException ioe)
-                {
-                    ioe.printStackTrace();
-                }
+
             }
         }
     }
@@ -142,6 +144,39 @@ class UI extends Thread{
 
                 }
             },"docName Description", this)
+        );
+
+        comms.put("add", new Command("add", new ParserCommand(){
+            public void execute(UI ui)
+            {
+                ui.currentComms = new FilterInput() {
+                    @Override
+                    public boolean isOk(String s) {
+                        //ui.eng.doc.
+                        return true;  //To change body of implemented methods use File | Settings | File Templates.
+                    }
+
+                    @Override
+                    public String getHelp() {
+                        return "Enter new element name: ";  //To change body of implemented methods use File | Settings | File Templates.
+                    }
+
+                    @Override
+                    public ParserCommand getCommand(String s) {
+                        final String tagName = s;
+                        return new ParserCommand() {
+                            @Override
+                            public void execute(UI ui) {
+                                Element newElement = ui.eng.doc.createElement(tagName);
+                                ui.eng.currentElement.appendChild(newElement);
+                                ui.currentComms = ui.comms;
+                            }
+                        };  //To change body of implemented methods use File | Settings | File Templates.
+                    }
+                };
+
+            }
+        },"add Description", this)
         );
 
         comms.put("select", new Command("select", new ParserCommand(){
@@ -186,7 +221,7 @@ class UI extends Thread{
                                         }catch(NumberFormatException nfe){
                                             return false;
                                         }
-                                        return n>-1 && n<nl.getLength();  //To change body of implemented methods use File | Settings | File Templates.
+                                        return n>-1 && n < nl.getLength();  //To change body of implemented methods use File | Settings | File Templates.
                                     }
 
                                     @Override
@@ -347,11 +382,25 @@ class UI extends Thread{
 
     public ParserCommand getCommand(FilterInput m)
     {
+        while(eng.isInterrupted())
+        {
+            try{
+                Thread.sleep(100);
+            }catch(InterruptedException ie){
+                ie.printStackTrace();
+            }
+        }
         String s="";
         while(true)
         {
             try
             {
+                if(eng.currentElement!=null){
+                    System.out.print(eng.currentElement.getNodeName()+" :");
+                }else{
+                    System.out.print("Enter file name with parameters :");
+                }
+
                 s = in.readLine();
             }
             catch(IOException ioe)
@@ -483,15 +532,7 @@ class Cfg implements FilterInput
                 }
                 ui.eng.interrupt();
                 ui.currentComms = ui.comms;
-                while(ui.eng.isInterrupted())
-                {
-                    try{
-                        Thread.sleep(1000);
-                    }catch(InterruptedException ie){
-                        ie.printStackTrace();
-                    }
-                }
-                System.out.print("Enter command :");
+                //System.out.print("Enter command :");
             }
         };
     }
