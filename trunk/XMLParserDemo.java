@@ -127,7 +127,7 @@ class UI extends Thread{
     FilterInput currentComms;
     File xmlFile;
     String [] cfgComms;
-
+    String cmdPrefix;
     public UI(){
         in = new BufferedReader ( new InputStreamReader(System.in) );
         out = new PrintWriter(System.out);
@@ -149,6 +149,7 @@ class UI extends Thread{
         comms.put("add", new Command("add", new ParserCommand(){
             public void execute(UI ui)
             {
+                final UI u = ui;
                 ui.currentComms = new FilterInput() {
                     @Override
                     public boolean isOk(String s) {
@@ -164,6 +165,7 @@ class UI extends Thread{
                     @Override
                     public ParserCommand getCommand(String s) {
                         final String tagName = s;
+                        u.cmdPrefix = "Enter tag name :";
                         return new ParserCommand() {
                             @Override
                             public void execute(UI ui) {
@@ -364,6 +366,7 @@ class UI extends Thread{
 
                 }*/
                 currentComms = eng.configs;
+                cmdPrefix = "Enter file name with parameters :";
 
                 while(true)
                 {
@@ -382,25 +385,13 @@ class UI extends Thread{
 
     public ParserCommand getCommand(FilterInput m)
     {
-        while(eng.isInterrupted())
-        {
-            try{
-                Thread.sleep(100);
-            }catch(InterruptedException ie){
-                ie.printStackTrace();
-            }
-        }
+
         String s="";
         while(true)
         {
             try
             {
-                if(eng.currentElement!=null){
-                    System.out.print(eng.currentElement.getNodeName()+" :");
-                }else{
-                    System.out.print("Enter file name with parameters :");
-                }
-
+                System.out.print(cmdPrefix);
                 s = in.readLine();
             }
             catch(IOException ioe)
@@ -532,6 +523,14 @@ class Cfg implements FilterInput
                 }
                 ui.eng.interrupt();
                 ui.currentComms = ui.comms;
+                while(ui.eng.currentElement==null)
+                {
+                    try{
+                        Thread.sleep(100);
+                    }catch(InterruptedException ie){
+                        ie.printStackTrace();
+                    }
+                }
                 //System.out.print("Enter command :");
             }
         };
