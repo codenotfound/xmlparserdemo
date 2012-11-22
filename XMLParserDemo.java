@@ -186,11 +186,13 @@ class UI extends Thread{
                     {
                         final UI ui = u;
                 //ui.eng.doc.getDocumentElement();
+                    u.cmdPrefix = "Enter tag name :";
                     u.currentComms = new FilterInput() {
                     @Override
                     public boolean isOk(String s) {
                         return ui.eng.doc.getElementsByTagName(s).getLength() > 0;
                     }
+
 
                     @Override
                     public String getHelp() {
@@ -214,6 +216,7 @@ class UI extends Thread{
                                     toOut +=i+") "+nl.item(i).getNodeName()+"\n";
                                 }
                                 System.out.println(toOut);
+                                ui.cmdPrefix = "Enter tag number :";
                                 ui.currentComms = new FilterInput() {
                                     @Override
                                     public boolean isOk(String s) {
@@ -239,6 +242,7 @@ class UI extends Thread{
                                             public void execute(UI ui) {
                                                 ui.eng.currentElement = (Element) nl.item(num);
                                                 ui.currentComms = ui.comms;
+                                                ui.cmdPrefix = ui.eng.currentElement.getNodeName()+" :";
                                             }
                                         };  //To change body of implemented methods use File | Settings | File Templates.
                                     }
@@ -295,6 +299,50 @@ class UI extends Thread{
             },"docStruct Description", this)
         );
 
+        comms.put("save" , new Command("save", new ParserCommand() {
+            @Override
+            public void execute(UI ui) {
+                System.out.println(writeTree(ui.eng.doc.getDocumentElement(),0));
+
+            }
+            public String writeTree(Node nd, int tab)
+            {
+                String space = "";
+                for(int i = 0; i<tab; i++)
+                    space+="  ";
+
+                String s="";
+                s+="<"+nd.getNodeName();
+                for(int i=0; i<nd.getAttributes().getLength(); i++)
+                {
+                    s+=" "+nd.getAttributes().item(i).getNodeName()+"= \""
+                            +nd.getAttributes().item(i).getNodeValue()+"\"";
+                }
+                if(nd.hasChildNodes())
+                {
+                    for(int i=0; i<nd.getChildNodes().getLength(); i++)
+                    {
+                        //NodeList tmplist =
+
+                        if(nd.getChildNodes().item(i).getNodeName().compareTo("#text")==0 &&nd.getChildNodes().item(i).getNodeValue().trim().length()!=0){
+                            s+=space+"\""+nd.getChildNodes().item(i).getNodeValue()+"\"";
+
+                        }
+
+                        if(nd.getChildNodes().item(i).getNodeName()!="#text")
+                            writeTree(nd.getChildNodes().item(i), tab);
+                    }
+                    s+=">";
+                }
+                 else
+                     s+=">";
+
+                s+="<\\"+nd.getNodeName()+">\n";
+
+                return s;
+            }
+        }, "save description",this));
+
         //System commands
 
         sysComms.put("help", new Command("help",new ParserCommand()
@@ -321,12 +369,15 @@ class UI extends Thread{
         {
             public void execute(UI ui)
             {
+
+
                 ui.eng.doc = null;
                 ui.eng.XMLTextSource=null;
                 ui.eng.configs = new Cfg(ui);
                 ui.xmlFile=null;
                 ui.currentComms =ui.eng.configs;
-                System.out.println("File closed. Enter file name:");
+                System.out.println("File closed.");
+                ui.cmdPrefix = "Enter file name with parameters :";
             }
         },"close Description", this)
         );
@@ -531,7 +582,8 @@ class Cfg implements FilterInput
                         ie.printStackTrace();
                     }
                 }
-                //System.out.print("Enter command :");
+
+                ui.cmdPrefix = ui.eng.currentElement.getNodeName()+" :";
             }
         };
     }
