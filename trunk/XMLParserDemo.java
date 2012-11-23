@@ -150,6 +150,7 @@ class UI extends Thread{
             public void execute(UI ui)
             {
                 final UI u = ui;
+                u.cmdPrefix = "Enter tag name :";
                 ui.currentComms = new FilterInput() {
                     @Override
                     public boolean isOk(String s) {
@@ -165,13 +166,13 @@ class UI extends Thread{
                     @Override
                     public ParserCommand getCommand(String s) {
                         final String tagName = s;
-                        u.cmdPrefix = "Enter tag name :";
                         return new ParserCommand() {
                             @Override
                             public void execute(UI ui) {
                                 Element newElement = ui.eng.doc.createElement(tagName);
                                 ui.eng.currentElement.appendChild(newElement);
                                 ui.currentComms = ui.comms;
+                                ui.cmdPrefix = ui.eng.currentElement.getNodeName()+" :";
                             }
                         };  //To change body of implemented methods use File | Settings | File Templates.
                     }
@@ -302,42 +303,61 @@ class UI extends Thread{
         comms.put("save" , new Command("save", new ParserCommand() {
             @Override
             public void execute(UI ui) {
-                System.out.println(writeTree(ui.eng.doc.getDocumentElement(),0));
+                try{
+                    FileWriter fw = new FileWriter(ui.xmlFile);
+                    fw.write(writeTree(ui.eng.doc.getDocumentElement(), 0));
+                    fw.flush();
+                    fw.close();
+                }
+                catch(IOException ioe){
+                    ioe.printStackTrace();
+                }
 
             }
             public String writeTree(Node nd, int tab)
             {
                 String space = "";
                 for(int i = 0; i<tab; i++)
-                    space+="  ";
-
+                    space+="\t";
                 String s="";
+                if(tab==0)
+                    s+="<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n";
+
+                s+=space;
                 s+="<"+nd.getNodeName();
                 for(int i=0; i<nd.getAttributes().getLength(); i++)
                 {
                     s+=" "+nd.getAttributes().item(i).getNodeName()+"= \""
                             +nd.getAttributes().item(i).getNodeValue()+"\"";
                 }
+                s+=">";
                 if(nd.hasChildNodes())
                 {
-                    for(int i=0; i<nd.getChildNodes().getLength(); i++)
+                    if(nd.getFirstChild().getNodeName().compareTo("#text")!=0 || nd.getFirstChild().getNodeValue().trim().length()==0)
+                        s+="\n";
+                    NodeList tmplist = nd.getChildNodes();
+                    for(int i=0; i<tmplist.getLength(); i++)
                     {
-                        //NodeList tmplist =
 
-                        if(nd.getChildNodes().item(i).getNodeName().compareTo("#text")==0 &&nd.getChildNodes().item(i).getNodeValue().trim().length()!=0){
-                            s+=space+"\""+nd.getChildNodes().item(i).getNodeValue()+"\"";
+                        if(tmplist.item(i).getNodeName().compareTo("#text")==0 &&tmplist.item(i).getNodeValue().trim().length()!=0){
+                            s+=tmplist.item(i).getNodeValue();
 
                         }
 
-                        if(nd.getChildNodes().item(i).getNodeName()!="#text")
-                            writeTree(nd.getChildNodes().item(i), tab);
-                    }
-                    s+=">";
-                }
-                 else
-                     s+=">";
+                        if(tmplist.item(i).getNodeName()!="#text")
+                        {
 
-                s+="<\\"+nd.getNodeName()+">\n";
+                            s+=writeTree(tmplist.item(i), tab+1);
+                        }
+
+                    }
+                    //s+=">";
+                }
+                 //else
+                     //s+=">";
+                if(s.lastIndexOf("\n")==s.length()-1)
+                    s+=space;
+                s+="</"+nd.getNodeName()+">\n";
 
                 return s;
             }
@@ -375,6 +395,7 @@ class UI extends Thread{
                 ui.eng.XMLTextSource=null;
                 ui.eng.configs = new Cfg(ui);
                 ui.xmlFile=null;
+                ui.eng.currentElement=null;
                 ui.currentComms =ui.eng.configs;
                 System.out.println("File closed.");
                 ui.cmdPrefix = "Enter file name with parameters :";
