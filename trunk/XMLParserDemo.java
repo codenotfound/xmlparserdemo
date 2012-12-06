@@ -155,7 +155,9 @@ class UI extends Thread{
                     @Override
                     public boolean isOk(String s) {
                         //ui.eng.doc.
-                        return true;  //To change body of implemented methods use File | Settings | File Templates.
+                        //"^[^[a-zA-z_][^\s\<\>]*"
+                        //"^(x|X)(m|M)(l|L)"
+                        return true//ui.eng.db;  //To change body of implemented methods use File | Settings | File Templates.
                     }
 
                     @Override
@@ -277,10 +279,11 @@ class UI extends Thread{
                         return "Enter tag name";  //To change body of implemented methods use File | Settings | File Templates.
                     }
 
-                    public boolean isParent(Node n){
-                        if(n.equals((Node) ui.eng.currentElement))return true;
-                        if(n.getParentNode()==null)return false;
-                        return isParent(n.getParentNode());
+                    public boolean isParent(Node child, Node parent){
+                        if(child.equals(parent))return true;
+                        if(child.getParentNode()==null)return false;
+
+                        return isParent(child.getParentNode(), parent);
                     }
 
                     @Override
@@ -291,7 +294,7 @@ class UI extends Thread{
                             public void execute(UI ui) {
                                 final NodeList nl = ui.eng.doc.getElementsByTagName(tagName);
                                 if(nl.getLength()==1){
-                                    if(isParent(nl.item(0)))
+                                    if(isParent((Node) ui.eng.currentElement, nl.item(0)))
                                         ui.eng.currentElement = ui.eng.doc.getDocumentElement();
                                     ui.cmdPrefix = ui.eng.currentElement.getNodeName()+" :";
                                     ui.currentComms = ui.comms;
@@ -537,7 +540,7 @@ class UI extends Thread{
             {
                 System.out.println("UI Exception");
                 e.printStackTrace();
-            }
+            }                        //
 
         }
     }
