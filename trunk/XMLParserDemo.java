@@ -40,8 +40,6 @@ class XMLParserDemo
     {
         XMLParserDemo p = new XMLParserDemo();
     }
-
-
 }
 class Engine extends Thread
 {
@@ -77,8 +75,6 @@ class Engine extends Thread
             System.out.println("NO UI");
             System.exit(0);
         }
-
-
         while(true)
         {
             try
@@ -118,7 +114,6 @@ class Engine extends Thread
                     {
                         ioe.printStackTrace();
                     }
-
             }
         }
     }
@@ -137,18 +132,13 @@ class UI extends Thread{
     public UI(){
         in = new BufferedReader ( new InputStreamReader(System.in) );
         out = new PrintWriter(System.out);
-
-        comms = new CommandMap();
+        comms = new CommandMap();//Common commands
         sysComms = new CommandMap();
-
-        //Common commands
-
         comms.put("docName", new Command("docName", new ParserCommand(){
-                public void execute(UI ui)
-                {
-                    System.out.println(ui.eng.doc.getDocumentElement().getTagName());
-
-                }
+            public void execute(UI ui)
+            {
+                System.out.println(ui.eng.doc.getDocumentElement().getTagName());
+            }
             },"docName Description", this)
         );
 
@@ -164,7 +154,7 @@ class UI extends Thread{
                     }
                     public String getErrorMsg(){
 
-                        return "Error";
+                        return "Error: Incorrect tag name";
                     }
                     @Override
                     public String getHelp() {
@@ -193,8 +183,7 @@ class UI extends Thread{
         comms.put("select", new Command("select", new ParserCommand(){
                     public void execute(UI u)
                     {
-                        final UI ui = u;
-                //ui.eng.doc.getDocumentElement();
+                    final UI ui = u;
                     u.cmdPrefix = "Enter tag name :";
                     u.currentComms = new FilterInput() {
                     @Override
@@ -203,7 +192,7 @@ class UI extends Thread{
                     }
                     public String getErrorMsg(){
 
-                        return "Error";
+                        return "Error: Tag not found";
                     }
 
                     @Override
@@ -244,7 +233,7 @@ class UI extends Thread{
                                     }
                                     public String getErrorMsg(){
 
-                                        return "Error";
+                                        return "Error: Number out of range";
                                     }
                                     @Override
                                     public String getHelp() {
@@ -277,7 +266,6 @@ class UI extends Thread{
             public void execute(UI u)
             {
                 final UI ui = u;
-                //ui.eng.doc.getDocumentElement();
                 u.cmdPrefix = "Enter tag name :";
                 u.currentComms = new FilterInput() {
                     @Override
@@ -286,7 +274,7 @@ class UI extends Thread{
                     }
                     public String getErrorMsg(){
 
-                        return "Error";
+                        return "Error: Tag not found";
                     }
 
                     @Override
@@ -333,7 +321,7 @@ class UI extends Thread{
                                     }
                                     public String getErrorMsg(){
 
-                                        return "Error";
+                                        return "Error: Number out of range";
                                     }
                                     @Override
                                     public String getHelp() {
@@ -396,8 +384,7 @@ class UI extends Thread{
                     {
                         if(nd.getChildNodes().item(i).getNodeName().compareTo("#text")==0 && eng.configs.isSet("tc") &&nd.getChildNodes().item(i).getNodeValue().trim().length()!=0){
                             System.out.println(space+"\""+nd.getChildNodes().item(i).getNodeValue()+"\"");
-                            //System.out.println("before :'"+nd.getChildNodes().item(i).getNodeValue()+"' after :'"+nd.getChildNodes().item(i).getNodeValue().trim()+"'");
-                        }  //?????
+                         }
 
                         if(!nd.getChildNodes().item(i).getNodeName().equals("#text"))
                             treeParse(nd.getChildNodes().item(i), tab);
@@ -664,24 +651,17 @@ class Cfg implements FilterInput
                 ui.cfgComms = new String[0];
                 ui.cfgComms = list.toArray(ui.cfgComms);
                 Arrays.sort(ui.cfgComms);
-
                 return true;
             }
             else
             {
-                //System.out.println("Incorrect file name");
                 return false;
-
             }
-
-
         }
-
-
     }
-    public String getErrorMsg(){
-
-        return "Error";
+    public String getErrorMsg()
+    {
+        return "Error: Incorrect file name or file not found";
     }
     public String getHelp()
     {
@@ -746,7 +726,7 @@ class CommandMap extends HashMap<String, Command> implements FilterInput
     }
     public String getErrorMsg(){
 
-        return "Error";
+        return "Error: Command not found";
     }
 
     public java.lang.String getHelp()
