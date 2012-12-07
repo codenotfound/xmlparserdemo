@@ -1,9 +1,27 @@
 package XMLParser;
-import org.w3c.dom.*;
-import javax.xml.parsers.*;
-import java.io.*;
-import java.nio.*;
-import java.util.*;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.PrintWriter;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.NavigableMap;
+import java.util.Set;
+import java.util.TreeMap;
+import java.util.regex.Pattern;
 
 class XMLParserDemo
 //klass-obolochka
@@ -72,18 +90,6 @@ class Engine extends Thread
             }
             catch (InterruptedException e)
             {
-                //System.out.print("Parser started. Enter commands.Possible commands: ");
-                /*
-                String s="";
-                for (Map.Entry<String, Command> entry : ui.comms.entrySet())
-                {
-                    s+=entry.getKey()+", ";// + " - " + entry.getValue().desc +"\n";
-                }
-                s+="\n";
-                System.out.print(s);
-                System.out.println("Type \"help\" to get description of commands");
-                 */
-
                     try
                     {
                         if(XMLTextSource.available() < 1)
@@ -149,17 +155,17 @@ class UI extends Thread{
         comms.put("add", new Command("add", new ParserCommand(){
             public void execute(UI ui)
             {
-                final UI u = ui;
-                u.cmdPrefix = "Enter tag name :";
+                ui.cmdPrefix = "Enter tag name :";
                 ui.currentComms = new FilterInput() {
                     @Override
                     public boolean isOk(String s) {
-                        //ui.eng.doc.
-                        //"^[^[a-zA-z_][^\s\<\>]*"
-                        //"^(x|X)(m|M)(l|L)"
-                        return true//ui.eng.db;  //To change body of implemented methods use File | Settings | File Templates.
+                        if(!Pattern.matches("^[a-zA-Z_][^\\s<>]*", s))return false;
+                        return !Pattern.matches("^(x|X)(m|M)(l|L)", s);//To change body of implemented methods use File | Settings | File Templates.
                     }
+                    public String getErrorMsg(){
 
+                        return "Error";
+                    }
                     @Override
                     public String getHelp() {
                         return "Enter new element name: ";  //To change body of implemented methods use File | Settings | File Templates.
@@ -195,7 +201,10 @@ class UI extends Thread{
                     public boolean isOk(String s) {
                         return ui.eng.doc.getElementsByTagName(s).getLength() > 0;
                     }
+                    public String getErrorMsg(){
 
+                        return "Error";
+                    }
 
                     @Override
                     public String getHelp() {
@@ -225,7 +234,7 @@ class UI extends Thread{
                                 ui.currentComms = new FilterInput() {
                                     @Override
                                     public boolean isOk(String s) {
-                                        int n = -1;
+                                        int n;
                                         try{
                                             n = Integer.parseInt(s);
                                         }catch(NumberFormatException nfe){
@@ -233,7 +242,10 @@ class UI extends Thread{
                                         }
                                         return n>-1 && n < nl.getLength();  //To change body of implemented methods use File | Settings | File Templates.
                                     }
+                                    public String getErrorMsg(){
 
+                                        return "Error";
+                                    }
                                     @Override
                                     public String getHelp() {
                                         return "Enter number";  //To change body of implemented methods use File | Settings | File Templates.
@@ -272,7 +284,10 @@ class UI extends Thread{
                     public boolean isOk(String s) {
                         return ui.eng.doc.getElementsByTagName(s).getLength() > 0;
                     }
+                    public String getErrorMsg(){
 
+                        return "Error";
+                    }
 
                     @Override
                     public String getHelp() {
@@ -280,10 +295,7 @@ class UI extends Thread{
                     }
 
                     public boolean isParent(Node child, Node parent){
-                        if(child.equals(parent))return true;
-                        if(child.getParentNode()==null)return false;
-
-                        return isParent(child.getParentNode(), parent);
+                        return child.equals(parent) || child.getParentNode() != null && isParent(child.getParentNode(), parent);
                     }
 
                     @Override
@@ -294,7 +306,7 @@ class UI extends Thread{
                             public void execute(UI ui) {
                                 final NodeList nl = ui.eng.doc.getElementsByTagName(tagName);
                                 if(nl.getLength()==1){
-                                    if(isParent((Node) ui.eng.currentElement, nl.item(0)))
+                                    if(isParent(ui.eng.currentElement, nl.item(0)))
                                         ui.eng.currentElement = ui.eng.doc.getDocumentElement();
                                     ui.cmdPrefix = ui.eng.currentElement.getNodeName()+" :";
                                     ui.currentComms = ui.comms;
@@ -311,7 +323,7 @@ class UI extends Thread{
                                 ui.currentComms = new FilterInput() {
                                     @Override
                                     public boolean isOk(String s) {
-                                        int n = -1;
+                                        int n;
                                         try{
                                             n = Integer.parseInt(s);
                                         }catch(NumberFormatException nfe){
@@ -319,7 +331,10 @@ class UI extends Thread{
                                         }
                                         return n>-1 && n < nl.getLength();  //To change body of implemented methods use File | Settings | File Templates.
                                     }
+                                    public String getErrorMsg(){
 
+                                        return "Error";
+                                    }
                                     @Override
                                     public String getHelp() {
                                         return "Enter number";  //To change body of implemented methods use File | Settings | File Templates.
@@ -331,10 +346,13 @@ class UI extends Thread{
                                         return new ParserCommand() {
                                             @Override
                                             public void execute(UI ui) {
-                                                ui.eng.currentElement = (Element) nl.item(num);
-                                                ui.currentComms = ui.comms;
+                                                Node n = ui.eng.doc.getElementsByTagName(tagName).item(num);
+                                                if(isParent(ui.eng.currentElement, n))
+                                                    ui.eng.currentElement = ui.eng.doc.getDocumentElement();
                                                 ui.cmdPrefix = ui.eng.currentElement.getNodeName()+" :";
-                                            }
+                                                ui.currentComms = ui.comms;
+                                                n.getParentNode().removeChild(n);
+                                             }
                                         };  //To change body of implemented methods use File | Settings | File Templates.
                                     }
                                 };
@@ -381,7 +399,7 @@ class UI extends Thread{
                             //System.out.println("before :'"+nd.getChildNodes().item(i).getNodeValue()+"' after :'"+nd.getChildNodes().item(i).getNodeValue().trim()+"'");
                         }  //?????
 
-                        if(nd.getChildNodes().item(i).getNodeName()!="#text")
+                        if(!nd.getChildNodes().item(i).getNodeName().equals("#text"))
                             treeParse(nd.getChildNodes().item(i), tab);
                     }
 
@@ -434,7 +452,7 @@ class UI extends Thread{
 
                         }
 
-                        if(tmplist.item(i).getNodeName()!="#text")
+                        if(!tmplist.item(i).getNodeName().equals("#text"))
                         {
 
                             s+=writeTree(tmplist.item(i), tab+1);
@@ -554,7 +572,7 @@ class UI extends Thread{
             try
             {
                 System.out.print(cmdPrefix);
-                s = in.readLine();
+                s = in.readLine().trim();
             }
             catch(IOException ioe)
             {
@@ -569,7 +587,7 @@ class UI extends Thread{
             }
             else
             {
-                System.out.println("Command not found, type \"help\" to get list of possible commands");
+                System.out.println(m.getErrorMsg());
             }
         }
         //return m.getCommand(s);
@@ -661,6 +679,10 @@ class Cfg implements FilterInput
 
 
     }
+    public String getErrorMsg(){
+
+        return "Error";
+    }
     public String getHelp()
     {
         Set<Map.Entry<String, String>> set = commands.entrySet();
@@ -708,23 +730,12 @@ class Command
     String desc;
     UI ui;
 
-    Command(String nm, ParserCommand cc, UI uint)
-    {
-        name = nm;
-        commandCode =cc;
-        desc = "";
-        ui = uint;
-    }
     Command(String nm, ParserCommand cc, String d, UI uint)
     {
         name = nm;
         commandCode =cc;
         desc = d;
         ui = uint;
-    }
-    public void execute()
-    {
-        commandCode.execute(ui);
     }
 }
 class CommandMap extends HashMap<String, Command> implements FilterInput
@@ -733,6 +744,11 @@ class CommandMap extends HashMap<String, Command> implements FilterInput
     {
         return this.containsKey(s);
     }
+    public String getErrorMsg(){
+
+        return "Error";
+    }
+
     public java.lang.String getHelp()
     {
         Set<Map.Entry<String, XMLParser.Command>> set = this.entrySet();
@@ -746,8 +762,8 @@ class CommandMap extends HashMap<String, Command> implements FilterInput
     }
     public XMLParser.ParserCommand getCommand(java.lang.String s)
     {
-        XMLParser.Command tmp = (XMLParser.Command) this.get(s);
-        return (XMLParser.ParserCommand) tmp.commandCode;
+        XMLParser.Command tmp = this.get(s);
+        return tmp.commandCode;
     }
 }
 interface ParserCommand
@@ -760,6 +776,7 @@ interface FilterInput
     public boolean isOk(String s);
     public String getHelp();
     public ParserCommand getCommand(String s);
+    public String getErrorMsg();
 
 }
 
