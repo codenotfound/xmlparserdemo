@@ -6,6 +6,9 @@ import org.w3c.dom.NodeList;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.transform.*;
+import javax.xml.transform.dom.DOMSource;
+import javax.xml.transform.stream.StreamResult;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
@@ -399,17 +402,20 @@ class UI extends Thread{
             @Override
             public void execute(UI ui) {
                 try{
+                    Transformer t = (TransformerFactory.newInstance()).newTransformer();
+                    t.transform(new DOMSource(ui.eng.doc), new StreamResult(ui.xmlFile));
+                    /*
                     FileWriter fw = new FileWriter(ui.xmlFile);
                     fw.write(writeTree(ui.eng.doc.getDocumentElement(), 0));
                     fw.flush();
-                    fw.close();
+                    fw.close();    */
                 }
-                catch(IOException ioe){
+                catch(Exception ioe){
                     ioe.printStackTrace();
                 }
 
             }
-            public String writeTree(Node nd, int tab)
+          /*  public String writeTree(Node nd, int tab)
             {
                 String space = "";
                 for(int i = 0; i<tab; i++)
@@ -455,7 +461,7 @@ class UI extends Thread{
                 s+="</"+nd.getNodeName()+">\n";
 
                 return s;
-            }
+            }    */
         }, "save description",this));
 
         //System commands
